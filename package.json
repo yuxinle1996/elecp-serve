@@ -1,0 +1,63 @@
+{
+  "name": "elecp-serve",
+  "version": "1.0.0",
+  "author": "dami",
+  "license": "MIT",
+  "description": "Static file serving for Electron apps",
+  "homepage": "github.com/yuxinle1996/elecp-serve#readme",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:yuxinle1996/elecp-serve.git"
+  },
+  "keywords": [
+    "electron",
+    "serve",
+    "serving",
+    "server",
+    "static",
+    "file",
+    "dev",
+    "development",
+    "react",
+    "router",
+    "web",
+    "app",
+    "history",
+    "pushstate",
+    "replacestate",
+    "href",
+    "url"
+  ],
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "main": "index.js",
+  "types": "index.d.ts",
+  "type": "module",
+  "scripts": {
+    "start": "electron test/test-default.js",
+    "build": "tsc",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
+  },
+  "contributors": [],
+  "git": {
+    "tagName": "v${version}"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
+  "github": {
+    "release": true,
+    "tokenRef": "GITHUB_AUTH"
+  },
+  "devDependencies": {
+    "electron": "^36.4.0",
+    "jest": "^29.7.0",
+    "@jest/globals": "^29.7.0",
+    "spectron": "^19.0.0",
+    "typescript": "^5.8.3"
+  }
+}
