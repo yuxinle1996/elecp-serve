@@ -15,6 +15,8 @@ npm install elecp-serve
 
 ## 使用方法
 
+基本用法
+
 ```javascript
 import { app, BrowserWindow } from "electron";
 import electronServe from "elecp-serve";
@@ -30,7 +32,7 @@ let mainWindow;
     },
   });
 
-  // 基本用法
+  // directory参数必填
   const loadUrl = electronServe({
     directory: join(__dirname, "public"),
   });
@@ -39,33 +41,52 @@ let mainWindow;
 })();
 ```
 
+在 electron-vite 中演示
+
+```javascript
+import { app, BrowserWindow } from "electron";
+import electronServe from "elecp-serve";
+import { join } from "path";
+
+let loadURL;
+
+async function createWindow(): Promise<void> {
+  const mainWindow = new BrowserWindow({
+    // ...other code
+    webPreferences: {
+      preload: join(__dirname, "../preload/index.mjs"),
+      webSecurity: false, // 禁用同源策略
+    },
+  });
+  // ...other code
+
+  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+    mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+    mainWindow.webContents.openDevTools();
+  } else {
+    await loadURL(mainWindow);
+  }
+}
+
+app.whenReady().then(async () => {
+  // 在 app 准备好后创建 loadURL 函数
+  loadURL = electronServe({
+    directory: join(__dirname, "../renderer"),
+    scheme: "app", // 自定义协议 默认为 app
+    hostname: "-", // 自定义主机名 默认为 -
+    file: "index", // 默认文件名 默认为index, 无需加后缀
+  });
+  // 默认地址为 app://-
+  // ...other code
+});
+```
+
 ## 配置选项
 
 - `directory` (必需): 要提供服务的目录路径。当 `directory` 是一个文件（有后缀）时，将忽略 `file` 选项。
 - `scheme` (可选): 自定义协议，默认为 `app`
 - `hostname` (可选): 自定义主机名，默认为 `-`
 - `file` (可选): 默认文件名，默认为 `index`
-
-## 测试
-
-项目包含针对各种功能的单元测试。
-
-### 运行测试
-
-```bash
-# 运行所有测试
-npm test
-
-# 监视模式运行测试
-npm run test:watch
-
-# 生成测试覆盖率报告
-npm run test:coverage
-```
-
-## 许可证
-
-MIT
 
 ---
 
@@ -106,30 +127,49 @@ let mainWindow;
 })();
 ```
 
+Demonstration in electron-vite
+
+```javascript
+import { app, BrowserWindow } from "electron";
+import electronServe from "elecp-serve";
+import { join } from "path";
+
+let loadURL;
+
+async function createWindow(): Promise<void> {
+  const mainWindow = new BrowserWindow({
+    // ...other code
+    webPreferences: {
+      preload: join(__dirname, "../preload/index.mjs"),
+      webSecurity: false, // Disable same-origin policy
+    },
+  });
+  // ...other code
+
+  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+    mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+    mainWindow.webContents.openDevTools();
+  } else {
+    await loadURL(mainWindow);
+  }
+}
+
+app.whenReady().then(async () => {
+  // Create the loadURL function after the app is ready
+  loadURL = electronServe({
+    directory: join(__dirname, "../renderer"),
+    scheme: "app", // Custom protocol, defaults to app
+    hostname: "-", // Custom hostname, defaults to -
+    file: "index", // Default filename, defaults to index, no suffix required
+  });
+  // The default address is app://-
+  // ...other code
+});
+```
+
 ## Configuration Options
 
 - `directory` (required): Path to the directory to serve. When `directory` is a file (with extension), the `file` option will be ignored.
 - `scheme` (optional): Custom protocol, defaults to `app`
 - `hostname` (optional): Custom hostname, defaults to `-`
 - `file` (optional): Default filename, defaults to `index`
-
-## Testing
-
-The project includes unit tests for various functionalities.
-
-### Running Tests
-
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Generate test coverage report
-npm run test:coverage
-```
-
-## License
-
-MIT

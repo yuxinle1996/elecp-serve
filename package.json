@@ -1,6 +1,6 @@
 {
   "name": "elecp-serve",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "dami",
   "license": "MIT",
   "description": "Static file serving for Electron apps",
