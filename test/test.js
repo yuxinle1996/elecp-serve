@@ -114,7 +114,7 @@ describe("electronServe 测试", () => {
     expect(mainWindow.loadURL).toHaveBeenCalledWith("app://-");
   });
 
-  test("fixture-search-params.js - 搜索参数测试", async () => {
+  test("fixture-search-params-obj.js - 搜索参数测试(对象)", async () => {
     // 创建loadUrl函数
     const loadUrl = electronServe({
       directory: join(__dirname, "index 3.html"),
@@ -134,6 +134,54 @@ describe("electronServe 测试", () => {
 
     // 验证mainWindow.loadURL被调用，且使用正确的URL和搜索参数
     expect(mainWindow.loadURL).toHaveBeenCalledWith("app://-?name=dami&age=18");
+  });
+
+  // 在这里增加fixture-search-params-str.js测试
+  test("fixture-search-params-str.js - 搜索参数测试(字符串)", async () => {
+    // 创建loadUrl函数
+    const loadUrl = electronServe({
+      directory: join(__dirname, "index 3.html"),
+    });
+
+    // 创建模拟的BrowserWindow实例
+    const mainWindow = new mockBrowserWindow();
+
+    // 调用loadUrl函数，传入字符串格式的搜索参数
+    await loadUrl(mainWindow, "name=dami&age=18");
+
+    // 验证protocol.handle被调用
+    expect(mockProtocol.handle).toHaveBeenCalledWith(
+      "app",
+      expect.any(Function)
+    );
+
+    // 验证mainWindow.loadURL被调用，且使用正确的URL和搜索参数
+    expect(mainWindow.loadURL).toHaveBeenCalledWith("app://-?name=dami&age=18");
+  });
+
+  // 在这里增加fixture-pathname.js测试
+  test("fixture-pathname.js - 路径名测试", async () => {
+    // 创建loadUrl函数
+    const loadUrl = electronServe({
+      directory: join(__dirname, "index 3.html"),
+    });
+
+    // 创建模拟的BrowserWindow实例
+    const mainWindow = new mockBrowserWindow();
+
+    // 调用loadUrl函数，传入搜索参数和路径名
+    await loadUrl(mainWindow, "name=dami&age=18", "pathname");
+
+    // 验证protocol.handle被调用
+    expect(mockProtocol.handle).toHaveBeenCalledWith(
+      "app",
+      expect.any(Function)
+    );
+
+    // 验证mainWindow.loadURL被调用，且使用正确的URL、路径名和搜索参数
+    expect(mainWindow.loadURL).toHaveBeenCalledWith(
+      "app://-/pathname?name=dami&age=18"
+    );
   });
 
   test("fixture-json.js - 加载JSON文件测试", async () => {

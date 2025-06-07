@@ -15,5 +15,7 @@ let mainWindow;
     directory: import.meta.dirname,
   });
 
-  loadUrl(mainWindow);
+  await loadUrl(mainWindow);
+  console.log(mainWindow.webContents.getURL()); // app://-
+  setTimeout(app.quit, 1000);
 })();

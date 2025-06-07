@@ -10,24 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { protocol, app } from "electron";
 import { join, resolve, relative, isAbsolute, extname } from "node:path";
 import { stat, readFile } from "fs/promises";
-// MIME type mapping
-const mimeTypes = {
-    ".html": "text/html",
-    ".js": "application/javascript",
-    ".css": "text/css",
-    ".json": "application/json",
-    ".png": "image/png",
-    ".jpg": "image/jpeg",
-    ".jpeg": "image/jpeg",
-    ".gif": "image/gif",
-    ".svg": "image/svg+xml",
-    ".ico": "image/x-icon",
-    ".woff": "font/woff",
-    ".woff2": "font/woff2",
-    ".ttf": "font/ttf",
-    ".eot": "application/vnd.ms-fontobject",
-    ".otf": "font/otf",
-};
+import mime from "mime";
 /**
  * Get the file path, if it's a directory, try to get the index.html inside it.
  * @param {string} _path The path to get the file path
@@ -105,7 +88,7 @@ export default function electronServe(options) {
                     return new Response(`Not found: ${targetPath}`, { status: 404 });
                 }
                 const ext = extname(targetPath);
-                const contentType = mimeTypes[ext] || "application/octet-stream";
+                const contentType = mime.getType(ext) || "application/octet-stream";
                 // build the response headers
                 const headers = {
                     "Content-Type": contentType,
@@ -128,15 +111,25 @@ export default function electronServe(options) {
         app.whenReady().then(registerProtocol);
     }
     // return the function that loads the URL
-    return (_window, searchParams) => __awaiter(this, void 0, void 0, function* () {
+    return (_window, searchParams, pathname) => __awaiter(this, void 0, void 0, function* () {
         let url = `${scheme}://${hostname}`;
+        // add pathname if provided
+        if (pathname) {
+            url += pathname.startsWith("/") ? pathname : `/${pathname}`;
+        }
         // add search params
-        if (searchParams && Object.keys(searchParams).length > 0) {
-            const urlSearchParams = new URLSearchParams();
-            for (const [key, value] of Object.entries(searchParams)) {
-                urlSearchParams.append(key, String(value));
+        if (searchParams) {
+            if (typeof searchParams === "string") {
+                url += searchParams.startsWith("?") ? searchParams : `?${searchParams}`;
             }
-            url += `?${urlSearchParams.toString()}`;
+            else if (typeof searchParams === "object" &&
+                Object.keys(searchParams).length > 0) {
+                const urlSearchParams = new URLSearchParams();
+                for (const [key, value] of Object.entries(searchParams)) {
+                    urlSearchParams.append(key, String(value));
+                }
+                url += `?${urlSearchParams.toString()}`;
+            }
         }
         yield _window.loadURL(url);
     });

@@ -15,5 +15,7 @@ let mainWindow;
     directory: join(import.meta.dirname, "index 3.html"),
   });
 
-  loadUrl(mainWindow, { name: "dami", age: 18 });
+  await loadUrl(mainWindow, { name: "dami", age: 18 });
+  console.log(mainWindow.webContents.getURL()); // app://-?name=dami&age=18
+  setTimeout(app.quit, 1000);
 })();

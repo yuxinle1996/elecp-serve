@@ -12,11 +12,10 @@ let mainWindow;
     },
   });
   const loadUrl = electronServe({
-    directory: join(import.meta.dirname, "index2.html"),
-    hostname: "custom-hostname",
+    directory: join(import.meta.dirname, "index 3.html"),
   });
 
-  await loadUrl(mainWindow);
-  console.log(mainWindow.webContents.getURL()); // app://custom-hostname
+  await loadUrl(mainWindow, "name=dami&age=18");
+  console.log(mainWindow.webContents.getURL()); // app://-?name=dami&age=18
   setTimeout(app.quit, 1000);
 })();

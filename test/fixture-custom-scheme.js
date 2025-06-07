@@ -17,5 +17,7 @@ let mainWindow;
     file: "index2",
   });
 
-  loadUrl(mainWindow);
+  await loadUrl(mainWindow);
+  console.log(mainWindow.webContents.getURL()); // love://-
+  setTimeout(app.quit, 1000);
 })();

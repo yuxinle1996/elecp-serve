@@ -17,4 +17,5 @@ let mainWindow;
   });
 
   loadUrl(mainWindow);
+  setTimeout(app.quit, 1000);
 })();

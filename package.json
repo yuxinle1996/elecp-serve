@@ -1,6 +1,6 @@
 {
   "name": "elecp-serve",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "dami",
   "license": "MIT",
   "description": "Static file serving for Electron apps",
@@ -36,7 +36,7 @@
   "types": "index.d.ts",
   "type": "module",
   "scripts": {
-    "start": "electron test/test-default.js",
+    "start": "electron test/fixture-404-error.js",
     "build": "tsc",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
@@ -54,10 +54,13 @@
     "tokenRef": "GITHUB_AUTH"
   },
   "devDependencies": {
+    "@jest/globals": "^29.7.0",
     "electron": "^36.4.0",
     "jest": "^29.7.0",
-    "@jest/globals": "^29.7.0",
     "spectron": "^19.0.0",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "mime": "^4.0.7"
   }
 }

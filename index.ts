@@ -1,27 +1,12 @@
 import { protocol, app, type BrowserWindow } from "electron";
 import { join, resolve, relative, isAbsolute, extname } from "node:path";
 import { stat, readFile } from "fs/promises";
+import mime from "mime";
 
-// MIME type mapping
-const mimeTypes: Record<string, string> = {
-  ".html": "text/html",
-  ".js": "application/javascript",
-  ".css": "text/css",
-  ".json": "application/json",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".svg": "image/svg+xml",
-  ".ico": "image/x-icon",
-  ".woff": "font/woff",
-  ".woff2": "font/woff2",
-  ".ttf": "font/ttf",
-  ".eot": "application/vnd.ms-fontobject",
-  ".otf": "font/otf",
-};
-
-interface ServeOptions {
+/**
+ * The options for the electronServe function.
+ */
+export interface ServeOptions {
   /**
    * The directory to serve, relative to the application root.
    * When the directory is a file, the "file" option will be ignored.
@@ -46,6 +31,11 @@ interface ServeOptions {
    */
   file?: string;
 }
+
+/**
+ * The search params type
+ */
+export type SearchParams = string | Record<string, string | number | boolean>;
 
 /**
  * Get the file path, if it's a directory, try to get the index.html inside it.
@@ -82,7 +72,8 @@ export default function electronServe(
   options: ServeOptions
 ): (
   _window: BrowserWindow,
-  searchParams?: Record<string, string | number | boolean>
+  searchParams?: SearchParams,
+  pathname?: string
 ) => Promise<void> {
   if (!options.directory) {
     throw new Error("The `directory` option is required");
@@ -145,8 +136,7 @@ export default function electronServe(
           return new Response(`Not found: ${targetPath}`, { status: 404 });
         }
         const ext = extname(targetPath);
-        const contentType = mimeTypes[ext] || "application/octet-stream";
-
+        const contentType = mime.getType(ext) || "application/octet-stream";
         // build the response headers
         const headers: Record<string, string> = {
           "Content-Type": contentType,
@@ -154,7 +144,7 @@ export default function electronServe(
         };
 
         return new Response(data, { headers });
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error handling protocol request:", error);
         return new Response(error.message, { status: 500 });
       }
@@ -172,17 +162,30 @@ export default function electronServe(
   // return the function that loads the URL
   return async (
     _window: BrowserWindow,
-    searchParams?: Record<string, string | number | boolean>
+    searchParams?: SearchParams,
+    pathname?: string
   ): Promise<void> => {
     let url = `${scheme}://${hostname}`;
 
+    // add pathname if provided
+    if (pathname) {
+      url += pathname.startsWith("/") ? pathname : `/${pathname}`;
+    }
+
     // add search params
-    if (searchParams && Object.keys(searchParams).length > 0) {
-      const urlSearchParams = new URLSearchParams();
-      for (const [key, value] of Object.entries(searchParams)) {
-        urlSearchParams.append(key, String(value));
+    if (searchParams) {
+      if (typeof searchParams === "string") {
+        url += searchParams.startsWith("?") ? searchParams : `?${searchParams}`;
+      } else if (
+        typeof searchParams === "object" &&
+        Object.keys(searchParams).length > 0
+      ) {
+        const urlSearchParams = new URLSearchParams();
+        for (const [key, value] of Object.entries(searchParams)) {
+          urlSearchParams.append(key, String(value));
+        }
+        url += `?${urlSearchParams.toString()}`;
       }
-      url += `?${urlSearchParams.toString()}`;
     }
 
     await _window.loadURL(url);
