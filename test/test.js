@@ -48,16 +48,23 @@ jest.unstable_mockModule("fs/promises", () => ({
 
 // 导入被测试的模块
 let electronServe;
+let registeredSchemes;
 
 // 在所有测试之前导入模块
 beforeAll(async () => {
-  electronServe = (await import("../index.js")).default;
+  const module = await import("../index.js");
+  electronServe = module.default;
+  registeredSchemes = module.registeredSchemes;
 });
 
 // 在每个测试之前重置所有模拟
 beforeEach(() => {
   jest.clearAllMocks();
   mockApp.isReady.mockReturnValue(false);
+  // 重置已注册的协议集合
+  if (registeredSchemes) {
+    registeredSchemes.clear();
+  }
 });
 
 describe("electronServe 测试", () => {
@@ -136,7 +143,6 @@ describe("electronServe 测试", () => {
     expect(mainWindow.loadURL).toHaveBeenCalledWith("app://-?name=dami&age=18");
   });
 
-  // 在这里增加fixture-search-params-str.js测试
   test("fixture-search-params-str.js - 搜索参数测试(字符串)", async () => {
     // 创建loadUrl函数
     const loadUrl = electronServe({
@@ -182,6 +188,78 @@ describe("electronServe 测试", () => {
     expect(mainWindow.loadURL).toHaveBeenCalledWith(
       "app://-/pathname?name=dami&age=18"
     );
+  });
+
+  // 在这里增加fixture-before-ready.js测试
+  test("fixture-before-ready.js - 应用准备就绪前注册协议测试", async () => {
+    // 确保app.isReady返回false
+    mockApp.isReady.mockReturnValue(false);
+
+    // 创建loadUrl函数
+    const loadUrl = electronServe({
+      directory: __dirname,
+    });
+
+    // 创建模拟的BrowserWindow实例
+    const mainWindow = new mockBrowserWindow();
+
+    // 调用loadUrl函数
+    await loadUrl(mainWindow);
+
+    // 验证app.whenReady被调用
+    expect(mockApp.whenReady).toHaveBeenCalled();
+
+    // 验证console.warn被调用，提示应在应用就绪后注册协议
+    expect(console.warn).toHaveBeenCalledWith(
+      "Protocol handler should be registered after app is ready. Will register it when ready."
+    );
+
+    // 验证mainWindow.loadURL被调用，且使用正确的URL
+    expect(mainWindow.loadURL).toHaveBeenCalledWith("app://-");
+  });
+
+  // 在这里增加fixture-repeat.js测试
+  test("fixture-repeat.js - 重复注册相同协议测试", async () => {
+    // 设置app.isReady为true，确保protocol.handle被直接调用
+    mockApp.isReady.mockReturnValue(true);
+
+    // 第一次创建loadUrl函数
+    const loadUrl1 = electronServe({
+      directory: __dirname,
+      file: "index",
+    });
+
+    // 第二次创建loadUrl函数，使用相同的scheme
+    const loadUrl2 = electronServe({
+      directory: __dirname,
+      file: "index2",
+    });
+
+    // 创建两个模拟的BrowserWindow实例
+    const mainWindow1 = new mockBrowserWindow();
+    const mainWindow2 = new mockBrowserWindow();
+
+    // 调用第一个loadUrl函数
+    await loadUrl1(mainWindow1);
+
+    // 调用第二个loadUrl函数
+    await loadUrl2(mainWindow2);
+
+    // 验证protocol.handle只被调用一次，因为第二次应该被跳过
+    expect(mockProtocol.handle).toHaveBeenCalledTimes(1);
+    expect(mockProtocol.handle).toHaveBeenCalledWith(
+      "app",
+      expect.any(Function)
+    );
+
+    // 验证console.warn被调用，提示协议已注册
+    expect(console.warn).toHaveBeenCalledWith(
+      "Protocol [app] is already registered,skipping..."
+    );
+
+    // 验证两个loadURL都被正确调用
+    expect(mainWindow1.loadURL).toHaveBeenCalledWith("app://-");
+    expect(mainWindow2.loadURL).toHaveBeenCalledWith("app://-");
   });
 
   test("fixture-json.js - 加载JSON文件测试", async () => {

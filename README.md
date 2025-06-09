@@ -22,11 +22,9 @@ import { app, BrowserWindow } from "electron";
 import electronServe from "elecp-serve";
 import { join } from "path";
 
-let mainWindow;
-
 (async () => {
   await app.whenReady();
-  mainWindow = new BrowserWindow({
+  const mainWindow = new BrowserWindow({
     webPreferences: {
       webSecurity: false, // 禁用同源策略
     },
@@ -34,7 +32,7 @@ let mainWindow;
 
   // directory参数必填
   const loadUrl = electronServe({
-    directory: join(__dirname, "public"),
+    directory: join(__dirname, "../renderer"),
   });
 
   loadUrl(mainWindow); // 默认地址为 app://-
@@ -46,7 +44,7 @@ let mainWindow;
 ```javascript
 (async () => {
   await app.whenReady();
-  mainWindow = new BrowserWindow({
+  const mainWindow = new BrowserWindow({
     webPreferences: {
       webSecurity: false, // 禁用同源策略
     },
@@ -54,14 +52,59 @@ let mainWindow;
 
   // directory参数必填
   const loadUrl = electronServe({
-    directory: join(__dirname, "public"),
+    directory: join(__dirname, "../renderer"),
     scheme: "test", // 自定义协议 默认为 app
     hostname: "custom", // 自定义主机名 默认为 -
     file: "index", // 默认文件名 默认为index, 无需加后缀
   });
 
   // 搜索参数 searchParams 可以是字符串(name=dami&age=18)或对象({name: "dami", age: 18})
-  loadUrl(mainWindow, { name: "dami", age: 18 }, "/user"); // test://custom?name=dami&age=18
+  loadUrl(mainWindow, { name: "dami", age: 18 }, "/user"); // test://custom/user?name=dami&age=18
+})();
+```
+
+⚠️ 不推荐的用法:
+
+```javascript
+import { app, BrowserWindow } from "electron";
+import electronServe from "elecp-serve";
+import { join } from "path";
+
+// 在 app.whenReady() 之前注册协议将触发警告(但正常运行,内部会等待)：
+// Protocol handler should be registered after app is ready. Will register it when ready.
+const loadUrl = electronServe({
+  directory: join(__dirname, "../renderer"),
+});
+
+(async () => {
+  await app.whenReady();
+  const mainWindow = new BrowserWindow({
+    webPreferences: {
+      webSecurity: false,
+    },
+  });
+
+  loadUrl(mainWindow);
+})();
+
+(async () => {
+  await app.whenReady();
+  const mainWindow = new BrowserWindow({
+    webPreferences: {
+      webSecurity: false,
+    },
+  });
+
+  // 重复使用相同的schema进行注册将触发警告(但正常运行,内部会跳过)：
+  // Protocol [app] is already registered.
+  // 建议使用相同的loadURL函数或使用不同的schema
+  const loadUrl = electronServe({
+    directory: directory: join(__dirname, "../renderer"),
+    // scheme: "app", // 应该与第一个不同
+    file: "index2",
+  });
+
+  loadUrl(mainWindow);
 })();
 ```
 
@@ -135,11 +178,9 @@ import { app, BrowserWindow } from "electron";
 import electronServe from "elecp-serve";
 import { join } from "path";
 
-let mainWindow;
-
 (async () => {
   await app.whenReady();
-  mainWindow = new BrowserWindow({
+  const mainWindow = new BrowserWindow({
     webPreferences: {
       webSecurity: false, // Disable same-origin policy
     },
@@ -147,7 +188,7 @@ let mainWindow;
 
   // Basic usage
   const loadUrl = electronServe({
-    directory: join(__dirname, "public"),
+    directory: join(__dirname, "../renderer"),
   });
 
   loadUrl(mainWindow);
@@ -159,7 +200,7 @@ Custom protocol/hostname/filename/path/search parameters
 ```javascript
 (async () => {
   await app.whenReady();
-  mainWindow = new BrowserWindow({
+  const mainWindow = new BrowserWindow({
     webPreferences: {
       webSecurity: false, // Disable same-origin policy
     },
@@ -167,14 +208,59 @@ Custom protocol/hostname/filename/path/search parameters
 
   // directory参数必填
   const loadUrl = electronServe({
-    directory: join(__dirname, "public"),
+    directory: join(__dirname, "../renderer"),
     scheme: "test", // Custom protocol, defaults to app
     hostname: "custom", // Custom hostname, defaults to -
     file: "index", // Default filename, defaults to index, no suffix required
   });
 
   // The search parameter searchParams can be a string (name=dami&age=18) or an object ({name: "dami", age: 18})
-  loadUrl(mainWindow, { name: "dami", age: 18 }, "/user"); // test://custom?name=dami&age=18
+  loadUrl(mainWindow, { name: "dami", age: 18 }, "/user"); // test://custom/user?name=dami&age=18
+})();
+```
+
+⚠️ Not recommended:
+
+```javascript
+import { app, BrowserWindow } from "electron";
+import electronServe from "elecp-serve";
+import { join } from "path";
+
+// registering the protocol before app.whenReady() will trigger a warning(but it will work, internal will wait):
+// Protocol handler should be registered after app is ready. Will register it when ready.
+const loadUrl = electronServe({
+  directory: join(__dirname, "../renderer"),
+});
+
+(async () => {
+  await app.whenReady();
+  const mainWindow = new BrowserWindow({
+    webPreferences: {
+      webSecurity: false,
+    },
+  });
+
+  loadUrl(mainWindow);
+})();
+
+(async () => {
+  await app.whenReady();
+  const mainWindow = new BrowserWindow({
+    webPreferences: {
+      webSecurity: false,
+    },
+  });
+
+  // Using the same schema to register repeatedly will trigger a warning(but it will work, internal will skip duplicates):
+  // Protocol [app] is already registered.
+  // It is recommended to use the same loadURL function or use a different scheme.
+  const loadUrl = electronServe({
+    directory: join(__dirname, "../renderer"),
+    // scheme: "app", // should be different from the first one
+    file: "index2",
+  });
+
+  loadUrl(mainWindow);
 })();
 ```
 

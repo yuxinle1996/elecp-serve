@@ -1,4 +1,5 @@
 import { type BrowserWindow } from "electron";
+export declare const registeredSchemes: Set<string>;
 /**
  * The options for the electronServe function.
  */

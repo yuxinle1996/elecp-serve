@@ -3,6 +3,9 @@ import { join, resolve, relative, isAbsolute, extname } from "node:path";
 import { stat, readFile } from "fs/promises";
 import mime from "mime";
 
+// Store registered schemes to prevent duplicate registration
+export const registeredSchemes = new Set<string>();
+
 /**
  * The options for the electronServe function.
  */
@@ -93,62 +96,75 @@ export default function electronServe(
 
   // ensure the protocol handler is registered after the app is ready
   const registerProtocol = (): void => {
-    protocol.handle(scheme, async (request) => {
-      try {
-        // parse the request URL to get the path
-        const pathname = decodeURIComponent(new URL(request.url).pathname);
-        // build the full file path
-        const filePath = join(directory, pathname);
-        // the default index file path
-        const indexPath = directory.endsWith(".html")
-          ? directory
-          : join(directory, `${file}.html`);
-        // security check: ensure the requested file path does not exceed the specified directory
-        const relativePath = relative(directory, filePath);
-        const isSafe =
-          !relativePath.startsWith("..") && !isAbsolute(relativePath);
-
-        if (!isSafe) {
-          return new Response("Path is not safe!!", {
-            status: 500,
-          });
-        }
-
-        // try to get the final file path
-        const finalPath = await getPath(filePath, file);
-        const fileExtension = extname(filePath);
-
-        // if the file is not found and is not an HTML or ASAR file, return 404
-        if (
-          !finalPath &&
-          fileExtension &&
-          fileExtension !== ".html" &&
-          fileExtension !== ".asar"
-        ) {
-          return new Response(`Not found: ${filePath}`, { status: 404 });
-        }
-        // read the file content
-        const targetPath = finalPath || indexPath;
-        let data;
+    // check if the protocol is registered, if it is registered, then skip.
+    if (registeredSchemes.has(scheme)) {
+      console.warn(`Protocol [${scheme}] is already registered,skipping...`);
+      return;
+    }
+    try {
+      protocol.handle(scheme, async (request) => {
         try {
-          data = await readFile(targetPath);
-        } catch (error) {
-          return new Response(`Not found: ${targetPath}`, { status: 404 });
-        }
-        const ext = extname(targetPath);
-        const contentType = mime.getType(ext) || "application/octet-stream";
-        // build the response headers
-        const headers: Record<string, string> = {
-          "Content-Type": contentType,
-          "Access-Control-Allow-Origin": "*",
-        };
+          // parse the request URL to get the path
+          const pathname = decodeURIComponent(new URL(request.url).pathname);
+          // build the full file path
+          const filePath = join(directory, pathname);
+          // the default index file path
+          const indexPath = directory.endsWith(".html")
+            ? directory
+            : join(directory, `${file}.html`);
+          // security check: ensure the requested file path does not exceed the specified directory
+          const relativePath = relative(directory, filePath);
+          const isSafe =
+            !relativePath.startsWith("..") && !isAbsolute(relativePath);
 
-        return new Response(data, { headers });
-      } catch (error: any) {
-        console.error("Error handling protocol request:", error);
-        return new Response(error.message, { status: 500 });
-      }
-    });
+          if (!isSafe) {
+            return new Response("Path is not safe!!", {
+              status: 500,
+            });
+          }
+
+          // try to get the final file path
+          const finalPath = await getPath(filePath, file);
+          const fileExtension = extname(filePath);
+
+          // if the file is not found and is not an HTML or ASAR file, return 404
+          if (
+            !finalPath &&
+            fileExtension &&
+            fileExtension !== ".html" &&
+            fileExtension !== ".asar"
+          ) {
+            return new Response(`Not found: ${filePath}`, { status: 404 });
+          }
+          // read the file content
+          const targetPath = finalPath || indexPath;
+          let data: Buffer;
+          try {
+            data = await readFile(targetPath);
+          } catch (error) {
+            return new Response(`Not found: ${targetPath}`, { status: 404 });
+          }
+          const ext = extname(targetPath);
+          const contentType = mime.getType(ext) || "application/octet-stream";
+          // build the response headers
+          const headers: Record<string, string> = {
+            "Content-Type": contentType,
+            "Access-Control-Allow-Origin": "*",
+          };
+
+          return new Response(data, { headers });
+        } catch (error: any) {
+          console.error("Error handling protocol request:", error);
+          return new Response(error.message, { status: 500 });
+        }
+      });
+
+      // After successful registration, add the scheme to the registered collection.
+      registeredSchemes.add(scheme);
+    } catch (error) {
+      // if registration fails (possibly because it is already registered), log the error
+      console.warn(`Failed to register protocol [${scheme}]: ${error}`);
+    }
   };
 
   // if the app is ready, register the protocol

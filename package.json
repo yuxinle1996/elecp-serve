@@ -1,6 +1,6 @@
 {
   "name": "elecp-serve",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "author": "dami",
   "license": "MIT",
   "description": "Static file serving for Electron apps",
@@ -36,7 +36,7 @@
   "types": "index.d.ts",
   "type": "module",
   "scripts": {
-    "start": "electron test/fixture-404-error.js",
+    "start": "electron test/fixture-repeat.js",
     "build": "tsc",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
